@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Generador Texto Minecraft</title>
+
+<style>
+
+*{
+    box-sizing:border-box;
+}
+
+body{
+    margin:0;
+    padding:20px;
+    font-family:Arial, sans-serif;
+    background:#1e1e1e;
+    color:white;
+}
+
+/* TITULO */
+
+h1{
+    text-align:center;
+    color:#00ffd5;
+    margin-bottom:20px;
+}
+
+/* INPUT */
+
+.main-input{
+    width:100%;
+    max-width:1400px;
+    margin:auto;
+}
+
+textarea{
+    width:100%;
+    resize:none;
+    border:none;
+    border-radius:10px;
+    padding:12px;
+    font-size:16px;
+    outline:none;
+}
+
+/* BOTONES */
+
+.buttons{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:6px;
+    margin-top:15px;
+    margin-bottom:20px;
+}
+
+button{
+    border:none;
+    border-radius:6px;
+    padding:8px 12px;
+    cursor:pointer;
+    font-weight:bold;
+    transition:0.2s;
+}
+
+button:hover{
+    transform:scale(1.05);
+}
+
+/* LAYOUT */
+
+.layout{
+
+    display:grid;
+
+    grid-template-columns:
+        300px
+        1fr
+        300px;
+
+    grid-template-areas:
+        "history center saved";
+
+    gap:20px;
+
+    align-items:start;
+
+    margin-top:20px;
+}
+
+/* PANEL */
+
+.panel{
+    background:#2a2a2a;
+    border-radius:12px;
+    padding:15px;
+    min-height:500px;
+    overflow-y:auto;
+}
+
+.panel h2{
+    margin-top:0;
+    text-align:center;
+    color:#ffffff;
+}
+
+.history-panel{
+    grid-area:history;
+}
+
+.center{
+    grid-area:center;
+}
+
+.saved-panel{
+    grid-area:saved;
+}
+/* ITEMS */
+
+.saved-item{
+    background:#3a3a3a;
+    padding:10px;
+    border-radius:8px;
+    margin-bottom:10px;
+    word-break:break-word;
+    text-align:left;
+    position:relative;
+}
+
+.saved-buttons{
+    display:flex;
+    gap:6px;
+    margin-top:10px;
+}
+
+.small-btn{
+    font-size:12px;
+    padding:5px 8px;
+}
+
+/* CENTRO */
+
+.center{
+    text-align:center;
+}
+
+/* PREVIEW */
+
+.image-container{
+    position:relative;
+    width:437px;
+    height:217px;
+    margin:auto;
+    overflow:hidden;
+}
+
+.image-container img{
+    width:100%;
+    height:100%;
+    display:block;
+}
+
+.preview-text{
+    position:absolute;
+
+    top:50%;
+    left:50%;
+
+    transform:translate(-50%, -50%);
+
+    width:78%;
+
+    text-align:center;
+
+    font-size:18px;
+    line-height:1.4;
+
+    white-space:pre-wrap;
+
+    word-break:break-word;
+
+    overflow-wrap:break-word;
+
+    text-shadow:
+        1px 1px 0 #000,
+        -1px 1px 0 #000,
+        1px -1px 0 #000,
+        -1px -1px 0 #000,
+        2px 0 0 #000,
+        -2px 0 0 #000,
+        0 2px 0 #000,
+        0 -2px 0 #000;
+
+    max-height:70%;
+
+    font-smooth: never;
+    -webkit-font-smoothing: none;
+    text-rendering: geometricPrecision;
+
+    overflow:hidden;
+}
+
+/* BOTONES ACCIONES */
+
+.action-buttons{
+    margin-top:20px;
+    display:flex;
+    justify-content:center;
+    gap:10px;
+    flex-wrap:wrap;
+    position:relative;
+}
+
+.action-buttons button{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+
+.copy-btn{
+    background:#00b964;
+    color:white;
+}
+
+.save-btn{
+    background:#2196f3;
+    color:white;
+}
+
+.delete-btn{
+    background:#d11a2a;
+    color:white;
+}
+
+.copy-message{
+    position:absolute;
+    margin-top:55px;
+    color:#00ff90;
+    font-weight:bold;
+    opacity:0;
+    pointer-events:none;
+    transition:0.3s;
+}
+
+.copy-message.show{
+    opacity:1;
+}
+
+.mobile-panels{
+    display:contents;
+}
+
+/* COLORES */
+
+.c0 { color:black; }
+.c1 { color:darkblue; }
+.c2 { color:darkgreen; }
+.c3 { color:darkcyan; }
+.c4 { color:darkred; }
+.c5 { color:purple; }
+.c6 { color:gold; }
+.c7 { color:gray; }
+.c8 { color:darkgray; }
+.c9 { color:blue; }
+.ca { color:#00ff00; }
+.cb { color:aqua; }
+.cc { color:red; }
+.cd { color:violet; }
+.ce { color:yellow; }
+.cf { color:white; }
+
+/* FORMATOS */
+
+.bold{
+    font-weight:900;
+}
+
+.italic{
+    font-style:italic;
+}
+
+.underline{
+    text-decoration:underline;
+}
+
+.strike{
+    text-decoration:line-through;
+}
+
+/* RESPONSIVE */
+@media(max-width:1100px){
+
+    .layout{
+
+        grid-template-columns:1fr;
+
+        grid-template-areas:
+            "center"
+            "panels";
+
+        gap:20px;
+    }
+
+    /* PREVIEW */
+
+    .center{
+        grid-area:center;
+        width:100%;
+    }
+
+    .image-container{
+        width:100%;
+        max-width:437px;
+        height:auto;
+        margin:auto;
+    }
+
+    .image-container img{
+        height:auto;
+    }
+
+    /* CONTENEDOR PANELES */
+
+    .mobile-panels{
+
+        grid-area:panels;
+
+        display:grid;
+
+        grid-template-columns:1fr 1fr;
+
+        gap:20px;
+
+        width:100%;
+    }
+
+    /* PANELES */
+
+    .mobile-panels .panel{
+
+        width:100%;
+
+        min-height:auto;
+    }
+
+    /* DESACTIVAR AREAS DESKTOP */
+
+    .history-panel,
+    .saved-panel{
+
+        grid-area:auto;
+    }
+
+}
+</style>
+</head>
+
+<body>
+
+<h1>Generador de Texto Minecraft</h1>
+
+<div class="main-input">
+
+<textarea
+    id="inputText"
+    rows="4"
+    placeholder="Escribe tu texto..."
+></textarea>
+
+</div>
+
+<div class="buttons">
+
+<button onclick="insertFormat('&0')" style="background:black;color:white;">0</button>
+<button onclick="insertFormat('&1')" style="background:darkblue;color:white;">1</button>
+<button onclick="insertFormat('&2')" style="background:darkgreen;color:white;">2</button>
+<button onclick="insertFormat('&3')" style="background:darkcyan;color:white;">3</button>
+<button onclick="insertFormat('&4')" style="background:darkred;color:white;">4</button>
+<button onclick="insertFormat('&5')" style="background:purple;color:white;">5</button>
+<button onclick="insertFormat('&6')" style="background:gold;color:black;">6</button>
+<button onclick="insertFormat('&7')" style="background:gray;color:black;">7</button>
+<button onclick="insertFormat('&8')" style="background:darkgray;color:white;">8</button>
+<button onclick="insertFormat('&9')" style="background:blue;color:white;">9</button>
+<button onclick="insertFormat('&a')" style="background:rgb(35, 224, 35);color:white;">a</button>
+<button onclick="insertFormat('&b')" style="background:aqua;color:black;">b</button>
+<button onclick="insertFormat('&c')" style="background:red;color:white;">c</button>
+<button onclick="insertFormat('&d')" style="background:violet;color:white;">d</button>
+<button onclick="insertFormat('&e')" style="background:yellow;color:black;">e</button>
+<button onclick="insertFormat('&f')" style="background:white;color:black;">f</button>
+
+<button onclick="insertFormat('&l')">Negrita</button>
+<button onclick="insertFormat('&o')">Cursiva</button>
+<button onclick="insertFormat('&n')">Subrayado</button>
+<button onclick="insertFormat('&r')">Reset</button>
+
+</div>
+
+<div class="layout">
+    <!-- HISTORIAL -->
+
+
+
+    <!-- CENTRO -->
+
+    <div class="center">
+
+        <h2>Vista previa</h2>
+
+        <div class="image-container">
+
+            <img src="letrero_minecraft_solo.png">
+
+            <div
+                class="preview-text"
+                id="preview"
+            ></div>
+
+        </div>
+
+        <div class="action-buttons">
+
+            <button
+                class="copy-btn"
+                onclick="copyText()"
+            >
+                Copiar texto
+            </button>
+
+            <button
+                class="save-btn"
+                onclick="saveMessage()"
+            >
+                Guardar mensaje
+            </button>
+
+            <button
+                class="delete-btn"
+                onclick="clearText()"
+            >
+                Eliminar texto
+            </button>
+
+            <div
+                class="copy-message"
+                id="copyMessage"
+            >
+                ✔ Copiado
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- GUARDADOS -->
+
+    <div class="mobile-panels">
+
+        <!-- HISTORIAL -->
+
+        <div class="panel history-panel">
+
+            <h2>Historial de mensajes copiados</h2>
+
+            <div id="historyList"></div>
+
+        </div>
+
+        <!-- GUARDADOS -->
+
+        <div class="panel saved-panel">
+
+            <h2>Mensajes guardados</h2>
+
+            <div id="savedList"></div>
+
+        </div>
+
+    </div>
+</div>
+
+
+
+<script>
+
+/* INPUT */
+
+const input =
+    document.getElementById("inputText");
+
+const preview =
+    document.getElementById("preview");
+
+/* INSERTAR FORMATO */
+
+function insertFormat(code){
+
+    const start =
+        input.selectionStart;
+
+    const end =
+        input.selectionEnd;
+
+    const text =
+        input.value;
+
+    input.value =
+        text.substring(0, start) +
+        code +
+        text.substring(end);
+
+    input.focus();
+
+    input.setSelectionRange(
+        start + code.length,
+        start + code.length
+    );
+
+    updatePreview();
+}
+
+/* UPDATE */
+
+function clearText(){
+
+    input.value = "";
+
+    updatePreview();
+}
+
+function updatePreview(){
+
+    const text =
+        input.value;
+
+    let result = "";
+
+    let currentClasses = [];
+
+    function openSpan(){
+
+        if(currentClasses.length > 0){
+
+            result +=
+                `<span class="${currentClasses.join(" ")}">`;
+
+        }
+
+    }
+
+    function closeSpan(){
+
+        if(currentClasses.length > 0){
+
+            result += "</span>";
+
+        }
+
+    }
+
+    for(let i = 0; i < text.length; i++){
+
+        if(text[i] === "&" && i + 1 < text.length){
+
+            const code =
+                text[i + 1].toLowerCase();
+
+            /* RESET */
+
+            if(code === "r"){
+
+                closeSpan();
+
+                currentClasses = [];
+
+                i++;
+                continue;
+            }
+
+            /* COLORES */
+
+            const colors = {
+                "0":"c0",
+                "1":"c1",
+                "2":"c2",
+                "3":"c3",
+                "4":"c4",
+                "5":"c5",
+                "6":"c6",
+                "7":"c7",
+                "8":"c8",
+                "9":"c9",
+                "a":"ca",
+                "b":"cb",
+                "c":"cc",
+                "d":"cd",
+                "e":"ce",
+                "f":"cf"
+            };
+
+            if(colors[code]){
+
+                closeSpan();
+
+                currentClasses =
+                    currentClasses.filter(c =>
+                        !c.startsWith("c")
+                    );
+
+                currentClasses.unshift(
+                    colors[code]
+                );
+
+                openSpan();
+
+                i++;
+                continue;
+            }
+
+            /* FORMATOS */
+
+            const formats = {
+                "l":"bold",
+                "o":"italic",
+                "n":"underline",
+                "m":"strike"
+            };
+
+            if(formats[code]){
+
+                closeSpan();
+
+                if(
+                    !currentClasses.includes(
+                        formats[code]
+                    )
+                ){
+                    currentClasses.push(
+                        formats[code]
+                    );
+                }
+
+                openSpan();
+
+                i++;
+                continue;
+            }
+        }
+
+        if(text[i] === "\n"){
+            result += "<br>";
+        }else{
+            result += text[i];
+        }
+    }
+
+    closeSpan();
+
+    preview.innerHTML = result;
+}
+
+/* COPIAR */
+
+function copyText(){
+
+    navigator.clipboard.writeText(
+        input.value
+    );
+
+    showCopied();
+
+    addToHistory(input.value);
+}
+
+/* MENSAJE COPIADO */
+
+function showCopied(){
+
+    const msg =
+        document.getElementById(
+            "copyMessage"
+        );
+
+    msg.classList.add("show");
+
+    setTimeout(() => {
+
+        msg.classList.remove("show");
+
+    }, 2000);
+}
+
+/* HISTORIAL */
+
+function addToHistory(text){
+
+    if(!text.trim()) return;
+
+    let history =
+        JSON.parse(
+            localStorage.getItem(
+                "mc_history"
+            )
+        ) || [];
+
+    history.unshift(text);
+
+    history = history.slice(0, 20);
+
+    localStorage.setItem(
+        "mc_history",
+        JSON.stringify(history)
+    );
+
+    renderHistory();
+}
+
+function renderHistory(){
+
+    const container =
+        document.getElementById(
+            "historyList"
+        );
+
+    let history =
+        JSON.parse(
+            localStorage.getItem(
+                "mc_history"
+            )
+        ) || [];
+
+    container.innerHTML = "";
+
+    history.forEach((item, index) => {
+
+        const div =
+            document.createElement("div");
+
+        div.className =
+            "saved-item";
+
+        div.innerHTML = `
+
+            <div>${escapeHtml(item)}</div>
+
+            <div class="saved-buttons">
+
+                <button
+                    class="small-btn"
+                    onclick="loadMessage('history', ${index})"
+                >
+                    Usar
+                </button>
+
+                <button
+                    class="small-btn"
+                    onclick="deleteHistory(${index})"
+                >
+                    Eliminar
+                </button>
+
+
+
+            </div>
+
+        `;
+
+        container.appendChild(div);
+
+    });
+}
+
+/* GUARDAR MENSAJE */
+
+function saveMessage(){
+
+    const text =
+        input.value;
+
+    if(!text.trim()) return;
+
+    let saved =
+        JSON.parse(
+            localStorage.getItem(
+                "mc_saved"
+            )
+        ) || [];
+
+    saved.unshift(text);
+
+    localStorage.setItem(
+        "mc_saved",
+        JSON.stringify(saved)
+    );
+
+    renderSaved();
+}
+
+/* RENDER SAVED */
+
+function renderSaved(){
+
+    const container =
+        document.getElementById(
+            "savedList"
+        );
+
+    let saved =
+        JSON.parse(
+            localStorage.getItem(
+                "mc_saved"
+            )
+        ) || [];
+
+    container.innerHTML = "";
+
+    saved.forEach((item, index) => {
+
+        const div =
+            document.createElement("div");
+
+        div.className =
+            "saved-item";
+
+        div.innerHTML = `
+
+            <div>${escapeHtml(item)}</div>
+
+            <div class="saved-buttons">
+
+                <button
+                    class="small-btn"
+                    onclick="loadMessage('saved', ${index})"
+                >
+                    Usar
+                </button>
+
+                <button
+                    class="small-btn"
+                    onclick="deleteSaved(${index})"
+                >
+                    Eliminar
+                </button>
+
+            </div>
+
+        `;
+
+        container.appendChild(div);
+
+    });
+}
+
+/* USAR MENSAJE */
+
+function loadMessage(type, index){
+
+    let list =
+        JSON.parse(
+            localStorage.getItem(
+                type === "saved"
+                ? "mc_saved"
+                : "mc_history"
+            )
+        ) || [];
+
+    input.value = list[index];
+
+    updatePreview();
+}
+
+/* ELIMINAR */
+
+function deleteSaved(index){
+
+    let saved =
+        JSON.parse(
+            localStorage.getItem(
+                "mc_saved"
+            )
+        ) || [];
+
+    saved.splice(index, 1);
+
+    localStorage.setItem(
+        "mc_saved",
+        JSON.stringify(saved)
+    );
+
+    renderSaved();
+}
+
+function deleteHistory(index){
+
+    let history =
+        JSON.parse(
+            localStorage.getItem(
+                "mc_history"
+            )
+        ) || [];
+
+    history.splice(index, 1);
+
+    localStorage.setItem(
+        "mc_history",
+        JSON.stringify(history)
+    );
+
+    renderHistory();
+}
+
+/* ESCAPAR HTML */
+
+function escapeHtml(text){
+
+    const div =
+        document.createElement("div");
+
+    div.innerText = text;
+
+    return div.innerHTML;
+}
+
+/* EVENTOS */
+
+input.addEventListener(
+    "input",
+    updatePreview
+);
+
+/* INIT */
+
+renderHistory();
+renderSaved();
+updatePreview();
+
+</script>
+
+</body>
+</html>
